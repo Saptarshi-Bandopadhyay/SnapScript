@@ -9,13 +9,9 @@ VOCAB_SIZE = 10000
 IMAGE_SIZE = (299, 299)
 
 print("loading_model...")
-try:
-    loaded_model = keras.saving.load_model(
+loaded_model = keras.saving.load_model(
     "./artifacts/caption_model.keras", compile=True)
-    print("model loaded...")
-except Exception as e:
-    with open('error.log', 'w') as f:
-        f.write(str(e))
+print("model loaded...")
 
 vocab = np.load("./artifacts/vocabulary.npy")
 print("vocab loaded...")
