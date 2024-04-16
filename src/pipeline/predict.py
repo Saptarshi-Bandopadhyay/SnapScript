@@ -1,16 +1,45 @@
 import keras
 import numpy as np
 import tensorflow as tf
-from make_dataset import decode_and_resize, vectorization
+import re
 
 SEQ_LENGTH = 25
+VOCAB_SIZE = 10000
+IMAGE_SIZE = (299, 299)
 
+print("loading_model.....")
 loaded_model = keras.saving.load_model(
     "./artifacts/caption_model.keras", compile=False)
+print("model loaded-------")
 vocab = np.load("./artifacts/vocabulary.npy")
+data_txt = list(np.load("./artifacts/data_txt.npy"))
 
 index_lookup = dict(zip(range(len(vocab)), vocab))
 max_decoded_sentence_length = SEQ_LENGTH - 1
+strip_chars = "!\"#$%&'()*+,-./:;=?@[\]^_`{|}~"
+
+
+def custom_standardization(input_string):
+    lowercase = tf.strings.lower(input_string)
+    return tf.strings.regex_replace(lowercase, f'{re.escape(strip_chars)}', '')
+
+
+vectorization = keras.layers.TextVectorization(
+    max_tokens=VOCAB_SIZE,
+    output_mode="int",
+    output_sequence_length=SEQ_LENGTH,
+    standardize=custom_standardization,
+)
+
+vectorization.adapt(data_txt)
+
+
+def decode_and_resize(img_path):
+    img = tf.io.read_file(img_path)
+    img = tf.image.decode_jpeg(img, channels=3)
+    img = tf.image.resize(img, IMAGE_SIZE)
+    img = tf.image.convert_image_dtype(img, tf.float32)
+    return img
 
 
 def generate_caption(img_path):
