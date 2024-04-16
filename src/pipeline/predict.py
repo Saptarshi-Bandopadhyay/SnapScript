@@ -40,19 +40,20 @@ vectorization.adapt(data_txt)
 print("vectorization adapted...")
 
 
-def decode_and_resize(img_path):
-    img = tf.io.read_file(img_path)
-    img = tf.image.decode_jpeg(img, channels=3)
+def decode_and_resize(image):
+    if isinstance(image, str):
+        img = tf.io.read_file(image)
+        img = tf.image.decode_jpeg(img, channels=3)
+    elif isinstance(image, np.ndarray):
+        img = tf.constant(image)
     img = tf.image.resize(img, IMAGE_SIZE)
     img = tf.image.convert_image_dtype(img, tf.float32)
     return img
 
 
-def generate_caption(img_path):
-    # Select a random image from the validation dataset
-
-    # Read the image from the disk
-    sample_img = decode_and_resize(img_path)
+def generate_caption(image):
+    
+    sample_img = decode_and_resize(image)
 
     # Pass the image to the CNN
     img = tf.expand_dims(sample_img, 0)
@@ -77,4 +78,4 @@ def generate_caption(img_path):
 
     decoded_caption = decoded_caption.replace("<start> ", "")
     decoded_caption = decoded_caption.replace(" <end>", "").strip()
-    print("Predicted Caption: ", decoded_caption)
+    return decoded_caption
