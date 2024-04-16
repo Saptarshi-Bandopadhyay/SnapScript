@@ -1,7 +1,7 @@
 import keras
 import tensorflow as tf
 from make_dataset import train_dataset, valid_dataset
-from src.components.model import get_cnn_model, TransformerEncoderBlock, TransformerDecoderBlock, ImageCaptioningModel, image_augmentation
+from src.components.model import get_cnn_model, TransformerEncoderBlock, TransformerDecoderBlock, ImageCaptioningModel, image_augmentation, LRSchedule
 
 
 EMBED_DIM = 512
@@ -25,30 +25,6 @@ early_stopping = keras.callbacks.EarlyStopping(
     patience=3, restore_best_weights=True)
 
 
-@keras.saving.register_keras_serializable()
-class LRSchedule(keras.optimizers.schedules.LearningRateSchedule):
-    def __init__(self, post_warmup_learning_rate, warmup_steps, **kwargs):
-        super().__init__(**kwargs)
-        self.post_warmup_learning_rate = post_warmup_learning_rate
-        self.warmup_steps = warmup_steps
-
-    def get_config(self):
-        config = {
-            "post_warmup_learning_rate": self.post_warmup_learning_rate,
-            "warmup_steps": self.warmup_steps,
-        }
-        return config
-
-    def __call__(self, step):
-        global_step = tf.cast(step, tf.float32)
-        warmup_steps = tf.cast(self.warmup_steps, tf.float32)
-        warmup_progress = global_step / warmup_steps
-        warmup_learning_rate = self.post_warmup_learning_rate * warmup_progress
-        return tf.cond(
-            global_step < warmup_steps,
-            lambda: warmup_learning_rate,
-            lambda: self.post_warmup_learning_rate,
-        )
 
 
 num_train_steps = len(train_dataset) * EPOCHS

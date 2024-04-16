@@ -2,19 +2,28 @@ import keras
 import numpy as np
 import tensorflow as tf
 import re
+from src.components.model import get_cnn_model, TransformerEncoderBlock, TransformerDecoderBlock, ImageCaptioningModel, image_augmentation, LRSchedule
 
 SEQ_LENGTH = 25
 VOCAB_SIZE = 10000
 IMAGE_SIZE = (299, 299)
 
-print("loading_model.....")
-loaded_model = keras.saving.load_model(
-    "./artifacts/caption_model.keras", compile=False)
-print("model loaded-------")
+print("loading_model...")
+try:
+    loaded_model = keras.saving.load_model(
+    "./artifacts/caption_model.keras", compile=True)
+    print("model loaded...")
+except Exception as e:
+    with open('error.log', 'w') as f:
+        f.write(str(e))
+
 vocab = np.load("./artifacts/vocabulary.npy")
-data_txt = list(np.load("./artifacts/data_txt.npy"))
+print("vocab loaded...")
+data_txt = np.load("./artifacts/data_txt.npy").tolist()
+print("vectorization data loaded...")
 
 index_lookup = dict(zip(range(len(vocab)), vocab))
+print("index lookup loaded...")
 max_decoded_sentence_length = SEQ_LENGTH - 1
 strip_chars = "!\"#$%&'()*+,-./:;=?@[\]^_`{|}~"
 
@@ -32,6 +41,7 @@ vectorization = keras.layers.TextVectorization(
 )
 
 vectorization.adapt(data_txt)
+print("vectorization adapted...")
 
 
 def decode_and_resize(img_path):
@@ -46,7 +56,7 @@ def generate_caption(img_path):
     # Select a random image from the validation dataset
 
     # Read the image from the disk
-    sample_img = decode_and_resize(sample_img)
+    sample_img = decode_and_resize(img_path)
 
     # Pass the image to the CNN
     img = tf.expand_dims(sample_img, 0)
@@ -72,7 +82,3 @@ def generate_caption(img_path):
     decoded_caption = decoded_caption.replace("<start> ", "")
     decoded_caption = decoded_caption.replace(" <end>", "").strip()
     print("Predicted Caption: ", decoded_caption)
-
-
-# Check predictions for a few samples
-generate_caption("./image.jpg")
